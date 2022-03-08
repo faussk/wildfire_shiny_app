@@ -28,12 +28,15 @@ ui <- fluidPage(
     ), # END of tabPanel for widget 1a
     
     tabPanel('WIDGET 1',
-             sidebarLayout((
-               sidebarPanel('TEST',
-                            # Date range
-                            ) # END DateRange
-             ), # END of sidebarPanel
-             mainPanel('Fires Map',
+             sidebarLayout(
+               sidebarPanel('Enter Date Range',
+                            dateRangeInput('dateRange',
+                                           label = 'Date range input: yyyy-mm-dd',
+                                           start = Sys.Date() - 2, end = Sys.Date() + 2
+                            ), #END of date range
+                            verbatimTextOutput("dateRangeText")
+                            ), # END of sidebarPanel
+               mainPanel('Fires Map',
                        plotOutput('fire_map')
                        ) # END of mainPanel
              ) # END of sidebarLayout
@@ -135,7 +138,11 @@ server <- function(input,output) {
   ) # END output starwars_plot
   
   # WIDGET 1
-  
+  output$dateRangeText  <- renderText({
+    paste("input$dateRange is", 
+          paste(as.character(input$dateRange), collapse = " to ")
+    )
+  })
   output$fire_map <- renderPlot({
     plot(eco261ab_cent_rec['LFM_Av20km'])
   })
