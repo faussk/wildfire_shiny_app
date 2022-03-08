@@ -48,6 +48,34 @@ ui <- fluidPage(
     
     tabPanel('WIDGET 3',
              sidebarLayout(
+               sidebarPanel('Select LFM Step Size',
+                            # DROPDOWN SELECT
+                            selectInput(inputId = 'lfm_step',
+                                        label = 'To calculate mean fire size by step increments of LFM',
+                                        choices = c('1 %'=1.,'5 %'=5.,'10 %'=10., '20 %'=20., '50 %'=50.))
+               ), # END sidebar panel 
+               mainPanel('Average Fire Size calculated for given LFM Step Size',
+                         plotOutput(outputId='mean_fire_plot')
+                         
+               ) # END of mainPanel
+             )), # END of tabPanel for widget 3
+    
+    tabPanel('WIDGET 4a',
+             sidebarLayout(
+               sidebarPanel('[CAN TYPE SM HERE]',
+                            # DROPDOWN SELECT
+                            selectInput(inputId = 'large',
+                                        label = 'Define Large Penguin by Body Mass (g):',
+                                        choices = c('4000 g'=4000.,'5000 g'=5000.,'6000 g'=6000.))
+               ), # END sidebar panel 
+               mainPanel('Dropdown, Histogram',
+                         plotOutput(outputId='large_penguin_plot')
+                         
+               ) # END of mainPanel
+             )), # END of tabPanel for widget 4a
+    
+    tabPanel('WIDGET 4',
+             sidebarLayout(
                sidebarPanel('Choose a minimum fire size:',
                             # RADIO BUTTONS:
                             radioButtons(inputId='large_fire',
@@ -64,34 +92,24 @@ ui <- fluidPage(
                mainPanel('Select a Minimum Fire Size and Number of Bins to Vary LFM Bin Width',
                          plotOutput(outputId='lfm_hist')
                ) # END of mainPanel
-             )), # END of tabPanel for widget 3
-    
-    tabPanel('WIDGET 4',
-             sidebarLayout(
-               sidebarPanel('[CAN TYPE SM HERE]',
-                            # DROPDOWN SELECT
-                            selectInput(inputId = 'large',
-                                        label = 'Define Large Penguin by Body Mass (g):',
-                                        choices = c('4000 g'=4000.,'5000 g'=5000.,'6000 g'=6000.))
-               ), # END sidebar panel 
-               mainPanel('Dropdown, Histogram',
-                         plotOutput(outputId='large_penguin_plot')
-                         
-               ) # END of mainPanel
              )) # END of tabPanel for widget 4
+
   ), # END navbarpage
-  
 ) # END UI
 
 
 
 # CREATE SERVER FUNCTION
 server <- function(input,output) {
-  
-  # Read in Burn Scar & LFM data here as shapefile:
+  # Read in data as spatial feature
   eco261ab_cent_rec <- read_sf(dsn = here("BurnScarsFRAP_wRecLFM_Chamise_CentEco261AB_Refined022021"))
+  # Ensure numeric
   eco261ab_cent_rec$LFM_Av20km <- as.numeric(eco261ab_cent_rec$LFM_Av20km)
   eco261ab_cent_rec$area_km2 <- as.numeric(eco261ab_cent_rec$area_km2)
+  # Drop NA's
+  eco261ab_cent_rec <- eco261ab_cent_rec %>%
+    drop_na(area_km2) %>%
+    drop_na(LFM_Av20km)
   
   # WIDGET 1
   starwars_reactive <- reactive({
@@ -129,25 +147,25 @@ server <- function(input,output) {
   }) # END penguin_table output
   
   # WIDGET 3
+  min_lfm <- min(eco261ab_cent_rec$LFM_Av20km)
+  max_lfm <- max(eco261ab_cent_rec$LFM_Av20km)
   
-  # HERE !!!
-  #big_fires <- reactive({
-  #  eco261ab_cent_rec %>% 
-  #    filter(big_fires>=input$large_fire)
-  #}) # END penguin_large reactive
+  lfm_step_input <- 5 # reactive(input$lfm_step) # HERE !!!
   
-  output$lfm_hist <- renderPlot({
-    big_fires <- eco261ab_cent_rec # HERE !!!
-    x <- big_fires$LFM_Av20km
-    
-    x <- na.omit(x)
-    bins <- seq(min(x), max(x), length.out=input$bins+1)
-    hist(x, breaks=bins, col='orange', border='black',
-         xlab='Live Fuel Moisture (LFM)',
-         main='Frequency of Fires with Varied LFM')
-  })
+  Seq <- seq(min_lfm, max_lfm+lfm_step_input,lfm_step_input)
   
-  # WIDGET 4
+  lfm.class <- cut(eco261ab_cent_rec$LFM_Av20km, Seq, include.lowest = TRUE)
+  mean.area <- tapply(eco261ab_cent_rec$area_km2, lfm.class, mean)
+  class.mids <- Seq[-1] - diff(Seq)/2
+  
+  output$mean_fire_plot <- renderPlot({
+    plot(mean.area~class.mids,
+         xlab='LFM',
+         ylab='Average Fire Size',
+         xlim=range(Seq))
+  }) # END mean_fire_plot output
+  
+  # WIDGET 4a
   big_penguins <- reactive({
     penguins %>% 
       filter(body_mass_g>=input$large)
@@ -156,6 +174,24 @@ server <- function(input,output) {
     ggplot(data=big_penguins(), aes(x=species, y=body_mass_g))+
       geom_jitter(aes(color=sex))
   })  # END penguin_large output
+  
+  # WIDGET 4
+  # HERE !!!
+  #big_fires <- reactive({
+  #  eco261ab_cent_rec %>% 
+  #    filter(big_fires>=input$large_fire)
+  #}) # END penguin_large reactive
+  output$lfm_hist <- renderPlot({
+    big_fires <- eco261ab_cent_rec # HERE !!!
+    x <- big_fires$LFM_Av20km
+    
+    bins <- seq(min(x), max(x), length.out=input$bins+1)
+    hist(x, breaks=bins, col='orange', border='black',
+         xlab='Live Fuel Moisture (LFM)',
+         main='Frequency of Fires with Varied LFM')
+  })
+  
+
   
 } # END SERVER
 
