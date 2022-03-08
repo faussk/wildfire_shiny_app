@@ -1,0 +1,49 @@
+---
+title: "Tester"
+author: "Kristina Fauss"
+date: "3/8/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(shiny)
+library(shinythemes)
+library(tidyverse)
+library(palmerpenguins)
+library(here)
+library(sf)
+```
+
+
+```{r}
+# Read in Burn Scar & LFM data here as shapefile:
+eco261ab_cent_rec <- st_read(dsn = here("BurnScarsFRAP_wRecLFM_Chamise_CentEco261AB_Refined022021"))
+typeof(eco261ab_cent_rec)
+```
+
+```{r}
+# Ensure numeric
+eco261ab_cent_rec$LFM_Av20km <- as.numeric(eco261ab_cent_rec$LFM_Av20km)
+eco261ab_cent_rec$area_km2 <- as.numeric(eco261ab_cent_rec$area_km2)
+# Drop NA's
+eco261ab_cent_rec <- eco261ab_cent_rec %>%
+  drop_na(area_km2) %>%
+  drop_na(LFM_Av20km)
+```
+
+```{r}
+typeof(eco261ab_cent_rec)
+```
+
+
+
+
+
+
+
+
+

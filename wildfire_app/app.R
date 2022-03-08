@@ -12,7 +12,7 @@ ui <- fluidPage(
   titlePanel('Wildfire in CA Chaparral'),
   navbarPage(
     '',
-    tabPanel('WIDGET 1',
+    tabPanel('WIDGET 1a',
              sidebarLayout(
                sidebarPanel('[CAN TYPE SM HERE]',
                             #CHECKBOX:
@@ -23,9 +23,21 @@ ui <- fluidPage(
                ), # END of sidebarPanel
                mainPanel('Checkbox, Dropdown, Point Plot',
                          plotOutput('starwars_plot')
-               ) # END of mainPanel
+                         ) # END of mainPanel
              ) # END of sidebarLayout
-    ), # END of tabPanel for widget 1
+    ), # END of tabPanel for widget 1a
+    
+    tabPanel('WIDGET 1',
+             sidebarLayout((
+               sidebarPanel('TEST',
+                            # Date range
+                            ) # END DateRange
+             ), # END of sidebarPanel
+             mainPanel('Fires Map',
+                       plotOutput('fire_map')
+                       ) # END of mainPanel
+             ) # END of sidebarLayout
+    ), # END of tabPanel for widget 1a
     
     tabPanel('WIDGET 2',
              sidebarLayout(
@@ -42,7 +54,7 @@ ui <- fluidPage(
                mainPanel('Radio Buttons, Dropdown, Point Plot, Summary Table',
                          plotOutput(outputId='penguin_plot'), # renders 'penguin_plot' which was created under Server below
                          tableOutput(outputId = 'penguin_table')
-               ) # END of mainPanel 
+                         ) # END of mainPanel 
              ) # END sidebarLayout
     ), # END of tabPanel for widget 2
     
@@ -102,7 +114,7 @@ ui <- fluidPage(
 # CREATE SERVER FUNCTION
 server <- function(input,output) {
   # Read in data as spatial feature
-  eco261ab_cent_rec <- read_sf(dsn = here("BurnScarsFRAP_wRecLFM_Chamise_CentEco261AB_Refined022021"))
+  eco261ab_cent_rec <- st_read(dsn = here("BurnScarsFRAP_wRecLFM_Chamise_CentEco261AB_Refined022021"))
   # Ensure numeric
   eco261ab_cent_rec$LFM_Av20km <- as.numeric(eco261ab_cent_rec$LFM_Av20km)
   eco261ab_cent_rec$area_km2 <- as.numeric(eco261ab_cent_rec$area_km2)
@@ -111,7 +123,7 @@ server <- function(input,output) {
     drop_na(area_km2) %>%
     drop_na(LFM_Av20km)
   
-  # WIDGET 1
+  # WIDGET 1a
   starwars_reactive <- reactive({
     starwars%>%
       filter(species%in% input$pick_species)
@@ -121,6 +133,12 @@ server <- function(input,output) {
            aes(x=mass, y=height)) +
       geom_point(aes(color=species))
   ) # END output starwars_plot
+  
+  # WIDGET 1
+  
+  output$fire_map <- renderPlot({
+    plot(eco261ab_cent_rec['LFM_Av20km'])
+  })
   
   # WIDGET 2
   penguin_select <- reactive({
