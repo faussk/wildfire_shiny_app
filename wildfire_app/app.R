@@ -48,15 +48,20 @@ ui <- fluidPage(
     
     tabPanel('WIDGET 3',
              sidebarLayout(
-               sidebarPanel('Number of Bins',
+               sidebarPanel('Choose a minimum fire size:',
+                            # RADIO BUTTONS:
+                            radioButtons(inputId='large_fire',
+                                         label='',
+                                         choices=c('No minimum fire size'=0.,'1 km^2'=1.,'10 km^2'=10.,'100 km^2'=100.,'1,000 km^2'=1000.)),
+                            'Number of Bins:',
                             # SLIDER:
                             sliderInput(inputId='bins',
-                                        label='LFM',
+                                        label='',
                                         min=1,
                                         max=100,
                                         value=30)
                ), # END sidebar panel 
-               mainPanel('Select Number of Bins to Vary LFM Bin Width',
+               mainPanel('Select a Minimum Fire Size and Number of Bins to Vary LFM Bin Width',
                          plotOutput(outputId='lfm_hist')
                ) # END of mainPanel
              )), # END of tabPanel for widget 3
@@ -86,8 +91,7 @@ server <- function(input,output) {
   # Read in Burn Scar & LFM data here as shapefile:
   eco261ab_cent_rec <- read_sf(dsn = here("BurnScarsFRAP_wRecLFM_Chamise_CentEco261AB_Refined022021"))
   eco261ab_cent_rec$LFM_Av20km <- as.numeric(eco261ab_cent_rec$LFM_Av20km)
-  lfm_rec_20km <- eco261ab_cent_rec$LFM_Av20km
-  area_km2 <- eco261ab_cent_rec$area_km2
+  eco261ab_cent_rec$area_km2 <- as.numeric(eco261ab_cent_rec$area_km2)
   
   # WIDGET 1
   starwars_reactive <- reactive({
@@ -125,8 +129,17 @@ server <- function(input,output) {
   }) # END penguin_table output
   
   # WIDGET 3
+  
+  # HERE !!!
+  #big_fires <- reactive({
+  #  eco261ab_cent_rec %>% 
+  #    filter(big_fires>=input$large_fire)
+  #}) # END penguin_large reactive
+  
   output$lfm_hist <- renderPlot({
-    x <- lfm_rec_20km
+    big_fires <- eco261ab_cent_rec # HERE !!!
+    x <- big_fires$LFM_Av20km
+    
     x <- na.omit(x)
     bins <- seq(min(x), max(x), length.out=input$bins+1)
     hist(x, breaks=bins, col='orange', border='black',
@@ -137,7 +150,7 @@ server <- function(input,output) {
   # WIDGET 4
   big_penguins <- reactive({
     penguins %>% 
-      filter(body_mass_g>=input$large) # match widget input to df column 'species'
+      filter(body_mass_g>=input$large)
   }) # END penguin_large reactive
   output$large_penguin_plot <- renderPlot({
     ggplot(data=big_penguins(), aes(x=species, y=body_mass_g))+
