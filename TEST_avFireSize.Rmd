@@ -64,25 +64,41 @@ Seq
 ```
 
 ```{r}
+range(Seq)
+```
+
+
+```{r}
 # Cut & mean & plot 2/3
 
-lfm.class <- cut(eco261ab_cent_rec$LFM_Av20km, Seq, include.lowest = TRUE)
-mean.area <- tapply(eco261ab_cent_rec$area_km2, lfm.class, mean)
-class.mids <- Seq[-1] - diff(Seq)/2
+lfm_class <- cut(eco261ab_cent_rec$LFM_Av20km, Seq, include.lowest = TRUE)
+mean_area <- tapply(eco261ab_cent_rec$area_km2, lfm_class, mean)
 
-#lfm.class
-length(class.mids)
-class.mids
-length(mean.area)
-mean.area
+class_mids <- Seq[-1] - diff(Seq)/2
 ```
 
 ```{r}
+length(lfm_class)
+lfm_class
+```
+
+
+```{r}
+length(mean_area)
+mean_area
+```
+
+```{r}
+length(class_mids)
+class_mids
+```
+
+
+```{r}
 # Cut & mean & plot 3/3
-plot(mean.area~class.mids,
+plot(mean_area~class_mids,
      xlab='LFM',
-     ylab='Average Fire Size',
-     xlim=range(Seq))
+     ylab='Average Fire Size')
 ```
 
 

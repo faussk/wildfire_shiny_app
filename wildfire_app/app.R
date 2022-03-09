@@ -67,7 +67,7 @@ ui <- fluidPage(
                             # DROPDOWN SELECT
                             selectInput(inputId = 'lfm_step',
                                         label = 'To calculate mean fire size by step increments of LFM',
-                                        choices = c('1 %'=1.,'5 %'=5.,'10 %'=10., '20 %'=20., '50 %'=50.))
+                                        choices = c('1 %'=1.,'5 %'=5.))#,'10 %'=10., '20 %'=20., '50 %'=50.))
                ), # END sidebar panel 
                mainPanel('Average Fire Size calculated for given LFM Step Size',
                          plotOutput(outputId='mean_fire_plot')
@@ -95,7 +95,7 @@ ui <- fluidPage(
                             # RADIO BUTTONS:
                             radioButtons(inputId='large_fire',
                                          label='',
-                                         choices=c('No minimum fire size'=0.,'1 km^2'=1.,'10 km^2'=10.,'100 km^2'=100.,'1,000 km^2'=1000.)),
+                                         choices=c('No minimum fire size'=0.,'1 km^2'=1.,'5 km^2'=5.,'10 km^2'=10.)),
                             'Number of Bins:',
                             # SLIDER:
                             sliderInput(inputId='bins',
@@ -175,16 +175,38 @@ server <- function(input,output) {
   min_lfm <- min(eco261ab_cent_rec$LFM_Av20km)
   max_lfm <- max(eco261ab_cent_rec$LFM_Av20km)
   
-  lfm_step_input <- 5 # reactive(input$lfm_step) # HERE !!!
+  # # WORKSHOP REACTIVE
+  # # input$lfm_step
+  # 
+  # # lfm_class <- reactive({
+  # #   cut(eco261ab_cent_rec$LFM_Av20km, seq(min_lfm, max_lfm+input$lfm_step,input$lfm_step), include.lowest = TRUE)
+  # #   }) # END lfm_class reactive
+  # mean_area <- reactive({
+  #   tapply(eco261ab_cent_rec$area_km2, (cut(eco261ab_cent_rec$LFM_Av20km, seq(min_lfm, max_lfm+input$lfm_step,input$lfm_step), include.lowest = TRUE)), mean)
+  #   })
+  # class_mids <- reactive({
+  #   seq(min_lfm, max_lfm+input$lfm_step,input$lfm_step)[-1] - diff(seq(min_lfm, max_lfm+input$lfm_step,input$lfm_step))/2
+  #   }) # END class_mids reactive
+  # # range_Seq <- reactive({
+  # #   range(seq(min_lfm, max_lfm+input$lfm_step,input$lfm_step))
+  # # }) # END range_Seq reactive
+  # 
+  # output$mean_fire_plot <- renderPlot({
+  #   plot(mean_area()~class_mids(),
+  #        xlab='LFM',
+  #        ylab='Average Fire Size')
+  # }) # END mean_fire_plot output
   
-  Seq <- seq(min_lfm, max_lfm+lfm_step_input,lfm_step_input)
-  
-  lfm.class <- cut(eco261ab_cent_rec$LFM_Av20km, Seq, include.lowest = TRUE)
-  mean.area <- tapply(eco261ab_cent_rec$area_km2, lfm.class, mean)
-  class.mids <- Seq[-1] - diff(Seq)/2
-  
+  # WORKING NON REACTIVE
+  lfm_step_input <- reactive({input$lfm_step})
+  Seq <- seq(min_lfm, max_lfm+lfm_step_input(),lfm_step_input())
+
+  lfm_class <- cut(eco261ab_cent_rec$LFM_Av20km, Seq, include.lowest = TRUE)
+  mean_area <- tapply(eco261ab_cent_rec$area_km2, lfm_class, mean)
+  class_mids <- Seq[-1] - diff(Seq)/2
+
   output$mean_fire_plot <- renderPlot({
-    plot(mean.area~class.mids,
+    plot(mean_area~class_mids,
          xlab='LFM',
          ylab='Average Fire Size',
          xlim=range(Seq))
@@ -201,23 +223,17 @@ server <- function(input,output) {
   })  # END penguin_large output
   
   # WIDGET 4
-  # HERE !!!
-  #big_fires <- reactive({
-  #  eco261ab_cent_rec %>% 
-  #    filter(big_fires>=input$large_fire)
-  #}) # END penguin_large reactive
+  big_fires <- reactive({
+   eco261ab_cent_rec %>%
+     filter(eco261ab_cent_rec$area_km2>=input$large_fire)
+  }) # END big_fires reactive
+  
   output$lfm_hist <- renderPlot({
-    big_fires <- eco261ab_cent_rec # HERE !!!
-    x <- big_fires$LFM_Av20km
-    
-    bins <- seq(min(x), max(x), length.out=input$bins+1)
-    hist(x, breaks=bins, col='orange', border='black',
+    bins <- seq(min(big_fires()$LFM_Av20km), max(big_fires()$LFM_Av20km), length.out=input$bins+1)
+    hist(big_fires()$LFM_Av20km, breaks=bins, col='orange', border='black',
          xlab='Live Fuel Moisture (LFM)',
          main='Frequency of Fires with Varied LFM')
-  })
-  
-
-  
+  }) # END big_fires output
 } # END SERVER
 
 
