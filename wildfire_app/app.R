@@ -15,6 +15,15 @@ ui <- fluidPage(
   navbarPage(
     '',
     
+    tabPanel('WELCOME',
+             sidebarLayout(
+               sidebarPanel('Welcome!',
+               ), # END of sidebarPanel
+               mainPanel('Text text text ...',
+               ) # END of mainPanel
+             ) # END of sidebarLayout
+    ), # END of tabPanel for widget 1
+    
     tabPanel('WIDGET 1',
              sidebarLayout(
                sidebarPanel('Enter Date Range',
@@ -29,23 +38,9 @@ ui <- fluidPage(
                        plotOutput('fire_map')
                        ) # END of mainPanel
              ) # END of sidebarLayout
-    ), # END of tabPanel for widget 1a
+    ), # END of tabPanel for widget 1
     
     tabPanel('WIDGET 2',
-             sidebarLayout(
-               sidebarPanel('[CAN TYPE SM HERE]',
-                            # RADIO BUTTONS:
-                            radioButtons(inputId='n',
-                                         label='Choose gif:',
-                                         choices=c('Simple'='Simple','Prob Spread'='ProbSpread','Steps Burn'='StepsBurn','Combined'='Combined')),
-               ), # END of sidebarPanel
-               mainPanel('Fire Spread Gif',
-                         plotOutput('flam_gif')
-               ) # END of mainPanel
-             ) # END of sidebarLayout
-    ), # END of tabPanel for widget 2
-    
-    tabPanel('WIDGET 3',
              sidebarLayout(
                sidebarPanel('Select LFM Step Size',
                             # DROPDOWN SELECT
@@ -57,9 +52,9 @@ ui <- fluidPage(
                          plotOutput(outputId='mean_fire_plot')
                          
                ) # END of mainPanel
-             )), # END of tabPanel for widget 3
+             )), # END of tabPanel for widget 2
     
-    tabPanel('WIDGET 4',
+    tabPanel('WIDGET 3',
              sidebarLayout(
                sidebarPanel('Choose a minimum fire size:',
                             # RADIO BUTTONS:
@@ -77,8 +72,22 @@ ui <- fluidPage(
                mainPanel('Select a Minimum Fire Size and Number of Bins to Vary LFM Bin Width',
                          plotOutput(outputId='lfm_hist')
                ) # END of mainPanel
-             )) # END of tabPanel for widget 4
-
+             )), # END of tabPanel for widget 3
+    
+    tabPanel('WIDGET 4',
+             sidebarLayout(
+               sidebarPanel('[CAN TYPE SM HERE]',
+                            # RADIO BUTTONS:
+                            radioButtons(inputId='n',
+                                         label='Choose gif:',
+                                         choices=c('Combined'='Combined','Prob Spread'='ProbSpread','Steps Burn'='StepsBurn','Simple'='Simple')),
+               ), # END of sidebarPanel
+               mainPanel('Fire Spread Gif',
+                         plotOutput('flam_gif')
+               ) # END of mainPanel
+             ) # END of sidebarLayout
+    ) # END of tabPanel for widget 4
+    
   ), # END navbarpage
 ) # END UI
 
@@ -105,17 +114,8 @@ server <- function(input,output) {
   output$fire_map <- renderPlot({
     plot(eco261ab_cent_rec_dateRed()['LFM_Av20km'], col=brewer.pal(n=10,name='RdYlGn'))
   }) # END fire_map output
-
-  # WIDGET 2
-  # #flam_gif
-  output$flam_gif <- renderImage({
-    filename <- here(paste('gifs/',input$n, '.gif', sep=''))
-    # Return a list containing the filename and alt text
-    list(src = filename,
-         alt = paste("Gif Name", input$n))
-  }, deleteFile = FALSE)
   
-  # WIDGET 3
+  # WIDGET 2
   min_lfm <- min(eco261ab_cent_rec$LFM_Av20km)
   max_lfm <- max(eco261ab_cent_rec$LFM_Av20km)
   eco261ab_cent_rec_df <- st_drop_geometry(eco261ab_cent_rec)
@@ -136,7 +136,7 @@ server <- function(input,output) {
          col='dark red')
   }) # END mean_fire_plot output
   
-  # WIDGET 4
+  # WIDGET 3
   big_fires <- reactive({
    eco261ab_cent_rec %>%
      filter(eco261ab_cent_rec$area_km2>=input$large_fire)
@@ -148,6 +148,16 @@ server <- function(input,output) {
          xlab='Live Fuel Moisture (LFM)',
          main='Frequency of Fires with Varied LFM')
   }) # END big_fires output
+  
+  # WIDGET 4
+  # #flam_gif
+  output$flam_gif <- renderImage({
+    filename <- here(paste('gifs/',input$n, '.gif', sep=''))
+    # Return a list containing the filename and alt text
+    list(src = filename,
+         alt = paste("Gif Name", input$n))
+  }, deleteFile = FALSE)
+  
 } # END SERVER
 
 
