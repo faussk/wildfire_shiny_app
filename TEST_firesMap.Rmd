@@ -26,6 +26,11 @@ typeof(eco261ab_cent_rec)
 ```
 
 ```{r}
+eco261ab_cent_rec
+```
+
+
+```{r}
 # Ensure numeric
 eco261ab_cent_rec$LFM_Av20km <- as.numeric(eco261ab_cent_rec$LFM_Av20km)
 eco261ab_cent_rec$area_km2 <- as.numeric(eco261ab_cent_rec$area_km2)

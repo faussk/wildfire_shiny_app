@@ -4,6 +4,8 @@ library(tidyverse)
 library(palmerpenguins)
 library(here)
 library(sf)
+library(lubridate)
+library(RColorBrewer)
 
 
 # CREATE USER INTERFACE
@@ -12,29 +14,16 @@ ui <- fluidPage(
   titlePanel('Wildfire in CA Chaparral'),
   navbarPage(
     '',
-    tabPanel('WIDGET 1a',
-             sidebarLayout(
-               sidebarPanel('[CAN TYPE SM HERE]',
-                            #CHECKBOX:
-                            checkboxGroupInput(inputId='pick_species',
-                                               label='Choose species:',
-                                               choices=unique(starwars$species)
-                            ) # END checkboxGroupInput
-               ), # END of sidebarPanel
-               mainPanel('Checkbox, Dropdown, Point Plot',
-                         plotOutput('starwars_plot')
-                         ) # END of mainPanel
-             ) # END of sidebarLayout
-    ), # END of tabPanel for widget 1a
     
     tabPanel('WIDGET 1',
              sidebarLayout(
                sidebarPanel('Enter Date Range',
                             dateRangeInput('dateRange',
-                                           label = 'Date range input: yyyy-mm-dd',
-                                           start = Sys.Date() - 2, end = Sys.Date() + 2
+                                           label = 'Date range input: yyyy',
+                                           start = '1990-01-01', 
+                                           end = '2000-01-01',
+                                           format = 'yyyy'
                             ), #END of date range
-                            verbatimTextOutput("dateRangeText")
                             ), # END of sidebarPanel
                mainPanel('Fires Map',
                        plotOutput('fire_map')
@@ -46,19 +35,14 @@ ui <- fluidPage(
              sidebarLayout(
                sidebarPanel('[CAN TYPE SM HERE]',
                             # RADIO BUTTONS:
-                            radioButtons(inputId='penguin_species',
-                                         label='Choose penguin species:',
-                                         choices=c('Adelie Button'='Adelie','Chinstrap Button'='Chinstrap','Gentoo Button'='Gentoo')),
-                            # DROPDOWN SELECT
-                            selectInput(inputId = 'pt_color',
-                                        label = 'Choose point color:',
-                                        choices = c('Awesome red!'='red','Blue!'='blue','Grass!'='green'))
-               ), # END sidebar panel  
-               mainPanel('Radio Buttons, Dropdown, Point Plot, Summary Table',
-                         plotOutput(outputId='penguin_plot'), # renders 'penguin_plot' which was created under Server below
-                         tableOutput(outputId = 'penguin_table')
-                         ) # END of mainPanel 
-             ) # END sidebarLayout
+                            radioButtons(inputId='n',
+                                         label='Choose gif:',
+                                         choices=c('Simple'='Simple','Prob Spread'='ProbSpread','Steps Burn'='StepsBurn','Combined'='Combined')),
+               ), # END of sidebarPanel
+               mainPanel('Fire Spread Gif',
+                         plotOutput('flam_gif')
+               ) # END of mainPanel
+             ) # END of sidebarLayout
     ), # END of tabPanel for widget 2
     
     tabPanel('WIDGET 3',
@@ -74,20 +58,6 @@ ui <- fluidPage(
                          
                ) # END of mainPanel
              )), # END of tabPanel for widget 3
-    
-    tabPanel('WIDGET 4a',
-             sidebarLayout(
-               sidebarPanel('[CAN TYPE SM HERE]',
-                            # DROPDOWN SELECT
-                            selectInput(inputId = 'large',
-                                        label = 'Define Large Penguin by Body Mass (g):',
-                                        choices = c('4000 g'=4000.,'5000 g'=5000.,'6000 g'=6000.))
-               ), # END sidebar panel 
-               mainPanel('Dropdown, Histogram',
-                         plotOutput(outputId='large_penguin_plot')
-                         
-               ) # END of mainPanel
-             )), # END of tabPanel for widget 4a
     
     tabPanel('WIDGET 4',
              sidebarLayout(
@@ -121,55 +91,29 @@ server <- function(input,output) {
   # Ensure numeric
   eco261ab_cent_rec$LFM_Av20km <- as.numeric(eco261ab_cent_rec$LFM_Av20km)
   eco261ab_cent_rec$area_km2 <- as.numeric(eco261ab_cent_rec$area_km2)
+  eco261ab_cent_rec$YEAR_ <- as.numeric(eco261ab_cent_rec$YEAR_)
   # Drop NA's
   eco261ab_cent_rec <- eco261ab_cent_rec %>%
     drop_na(area_km2) %>%
     drop_na(LFM_Av20km)
   
-  # WIDGET 1a
-  starwars_reactive <- reactive({
-    starwars%>%
-      filter(species%in% input$pick_species)
-  }) # END starwars_reactive
-  output$starwars_plot <- renderPlot(
-    ggplot(data=starwars_reactive(), # starwars_reactive is a "reactive" dataframe, therefore must end like w/ () : reactive_df()
-           aes(x=mass, y=height)) +
-      geom_point(aes(color=species))
-  ) # END output starwars_plot
-  
   # WIDGET 1
-  output$dateRangeText  <- renderText({
-    paste("input$dateRange is", 
-          paste(as.character(input$dateRange), collapse = " to ")
-    )
-  })
+  eco261ab_cent_rec_dateRed <- reactive({
+    eco261ab_cent_rec %>%
+      filter(YEAR_>=year(input$dateRange[1]) & YEAR_<=year(input$dateRange[2]))
+  }) # END eco261ab_cent_rec_dateRed reactive
   output$fire_map <- renderPlot({
-    plot(eco261ab_cent_rec['LFM_Av20km'])
-  })
-  
+    plot(eco261ab_cent_rec_dateRed()['LFM_Av20km'], col=brewer.pal(n=100,name='RdYlGn'))
+  }) # END fire_map output
+
   # WIDGET 2
-  penguin_select <- reactive({
-    penguins %>% 
-      filter(species==input$penguin_species) # match widget input to df column 'species'
-  }) # END penguin_select reactive
-  output$penguin_plot <- renderPlot({
-    ggplot(data=penguin_select(), # penguin_select is a "reactive" dataframe, therefore must end like w/ () : reactive_df()
-           aes(x=flipper_length_mm, y=body_mass_g))+
-      geom_point(color=input$pt_color)
-  })  # END penguin_select output
-  # 2- Table
-  penguin_table <- reactive({
-    penguins %>%
-      filter(species == input$penguin_species) %>%
-      group_by(sex) %>%
-      summarize(
-        mean_flip = mean(flipper_length_mm),
-        mean_mass = mean(body_mass_g)
-      )
-  }) # END penguin_table reactive
-  output$penguin_table<-renderTable({
-    penguin_table()
-  }) # END penguin_table output
+  # #flam_gif
+  output$flam_gif <- renderImage({
+    filename <- here(paste('gifs/',input$n, '.gif', sep=''))
+    # Return a list containing the filename and alt text
+    list(src = filename,
+         alt = paste("Gif Name", input$n))
+  }, deleteFile = FALSE)
   
   # WIDGET 3
   min_lfm <- min(eco261ab_cent_rec$LFM_Av20km)
@@ -198,8 +142,8 @@ server <- function(input,output) {
   # }) # END mean_fire_plot output
   
   # WORKING NON REACTIVE
-  lfm_step_input <- reactive({input$lfm_step})
-  Seq <- seq(min_lfm, max_lfm+lfm_step_input(),lfm_step_input())
+  lfm_step_input <- 5.
+  Seq <- seq(min_lfm, max_lfm+lfm_step_input,lfm_step_input)
 
   lfm_class <- cut(eco261ab_cent_rec$LFM_Av20km, Seq, include.lowest = TRUE)
   mean_area <- tapply(eco261ab_cent_rec$area_km2, lfm_class, mean)
@@ -211,16 +155,6 @@ server <- function(input,output) {
          ylab='Average Fire Size',
          xlim=range(Seq))
   }) # END mean_fire_plot output
-  
-  # WIDGET 4a
-  big_penguins <- reactive({
-    penguins %>% 
-      filter(body_mass_g>=input$large)
-  }) # END penguin_large reactive
-  output$large_penguin_plot <- renderPlot({
-    ggplot(data=big_penguins(), aes(x=species, y=body_mass_g))+
-      geom_jitter(aes(color=sex))
-  })  # END penguin_large output
   
   # WIDGET 4
   big_fires <- reactive({
