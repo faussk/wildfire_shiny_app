@@ -58,7 +58,7 @@ max_lfm
 # Cut & mean & plot 1/3
 
 #Seq <- c(55,75,95,115,135,155,175,195) # c function returns a 1 d vector array
-lfm_step <- 20
+lfm_step <- 1
 Seq <- seq(min_lfm, max_lfm+lfm_step,lfm_step)
 Seq
 ```

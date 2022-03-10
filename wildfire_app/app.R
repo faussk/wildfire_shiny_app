@@ -51,7 +51,7 @@ ui <- fluidPage(
                             # DROPDOWN SELECT
                             selectInput(inputId = 'lfm_step',
                                         label = 'To calculate mean fire size by step increments of LFM',
-                                        choices = c('1 %'=1.,'5 %'=5.))#,'10 %'=10., '20 %'=20., '50 %'=50.))
+                                        choices = c('1 %'=1.,'5 %'=5.,'10 %'=10., '20 %'=20., '50 %'=50.))
                ), # END sidebar panel 
                mainPanel('Average Fire Size calculated for given LFM Step Size',
                          plotOutput(outputId='mean_fire_plot')
@@ -103,7 +103,7 @@ server <- function(input,output) {
       filter(YEAR_>=year(input$dateRange[1]) & YEAR_<=year(input$dateRange[2]))
   }) # END eco261ab_cent_rec_dateRed reactive
   output$fire_map <- renderPlot({
-    plot(eco261ab_cent_rec_dateRed()['LFM_Av20km'], col=brewer.pal(n=100,name='RdYlGn'))
+    plot(eco261ab_cent_rec_dateRed()['LFM_Av20km'], col=brewer.pal(n=10,name='RdYlGn'))
   }) # END fire_map output
 
   # WIDGET 2
@@ -118,42 +118,22 @@ server <- function(input,output) {
   # WIDGET 3
   min_lfm <- min(eco261ab_cent_rec$LFM_Av20km)
   max_lfm <- max(eco261ab_cent_rec$LFM_Av20km)
+  eco261ab_cent_rec_df <- st_drop_geometry(eco261ab_cent_rec)
   
-  # # WORKSHOP REACTIVE
-  # # input$lfm_step
-  # 
-  # # lfm_class <- reactive({
-  # #   cut(eco261ab_cent_rec$LFM_Av20km, seq(min_lfm, max_lfm+input$lfm_step,input$lfm_step), include.lowest = TRUE)
-  # #   }) # END lfm_class reactive
-  # mean_area <- reactive({
-  #   tapply(eco261ab_cent_rec$area_km2, (cut(eco261ab_cent_rec$LFM_Av20km, seq(min_lfm, max_lfm+input$lfm_step,input$lfm_step), include.lowest = TRUE)), mean)
-  #   })
-  # class_mids <- reactive({
-  #   seq(min_lfm, max_lfm+input$lfm_step,input$lfm_step)[-1] - diff(seq(min_lfm, max_lfm+input$lfm_step,input$lfm_step))/2
-  #   }) # END class_mids reactive
-  # # range_Seq <- reactive({
-  # #   range(seq(min_lfm, max_lfm+input$lfm_step,input$lfm_step))
-  # # }) # END range_Seq reactive
-  # 
-  # output$mean_fire_plot <- renderPlot({
-  #   plot(mean_area()~class_mids(),
-  #        xlab='LFM',
-  #        ylab='Average Fire Size')
-  # }) # END mean_fire_plot output
+  class_mids <- reactive({
+    seq(min_lfm, max_lfm+as.numeric(input$lfm_step),as.numeric(input$lfm_step))[-1] - diff(seq(min_lfm, max_lfm+as.numeric(input$lfm_step),as.numeric(input$lfm_step)))/2
+    }) # END class_mids reactive
+  mean_area <- reactive({
+    tapply(eco261ab_cent_rec_df$area_km2, cut(eco261ab_cent_rec_df$LFM_Av20km, seq(min_lfm, max_lfm+as.numeric(input$lfm_step),as.numeric(input$lfm_step)), include.lowest = TRUE), mean)
+  }) # END mean_area reactive
   
-  # WORKING NON REACTIVE
-  lfm_step_input <- 5.
-  Seq <- seq(min_lfm, max_lfm+lfm_step_input,lfm_step_input)
-
-  lfm_class <- cut(eco261ab_cent_rec$LFM_Av20km, Seq, include.lowest = TRUE)
-  mean_area <- tapply(eco261ab_cent_rec$area_km2, lfm_class, mean)
-  class_mids <- Seq[-1] - diff(Seq)/2
-
   output$mean_fire_plot <- renderPlot({
-    plot(mean_area~class_mids,
+    plot(mean_area()~class_mids(),
          xlab='LFM',
          ylab='Average Fire Size',
-         xlim=range(Seq))
+         pch=16,
+         cex=1.7,
+         col='dark red')
   }) # END mean_fire_plot output
   
   # WIDGET 4
