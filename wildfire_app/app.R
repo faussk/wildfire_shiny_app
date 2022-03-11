@@ -15,75 +15,85 @@ ui <- fluidPage(
   navbarPage(
     '',
     
-    tabPanel('WELCOME',
+    tabPanel('WELCOME MAP',
              sidebarLayout(
                sidebarPanel('Welcome!',
-               ), # END of sidebarPanel
-               mainPanel('Text text text ...',
-               ) # END of mainPanel
-             ) # END of sidebarLayout
-    ), # END of tabPanel for widget 1
-    
-    tabPanel('WIDGET 1',
-             sidebarLayout(
-               sidebarPanel('Enter Date Range',
+                            helpText('This application explores the effect of changes in plant fuels on wildfire spread in CA chaparral.'),
+                            helpText('Live fuel moisture was assigned to fire perimeters by proximity to point LFM samples. A simple average was taken among all samples within 20km of the fire centroid and 10 days pre and post the burn event.'),
                             dateRangeInput('dateRange',
-                                           label = 'Date range input: yyyy',
+                                           label = 'Enter Date Range: YYYY to YYYY',
                                            start = '1990-01-01', 
                                            end = '2000-01-01',
                                            format = 'yyyy'
                             ), #END of date range
                             ), # END of sidebarPanel
-               mainPanel('Fires Map',
-                       plotOutput('fire_map')
+               mainPanel('Fire Perimeter Map',
+                         helpText('The map displays fire perimeters where color indicates change in live fuel moisture (LFM). Warmer colors represent lower LFM (more flammable) and cooler colors represent higher LFM (less flammable).'),
+                       plotOutput('fire_map'),
+                       'Data Summary',
+                       helpText(' '),
+                       'National Live Fuel Moisture Database: ',
+                       helpText('Provides a record of point samples of LFM across the United States. LFM data used in this study was restricted to Chamise *Adenstoma fasciculatum*, a dominant shrub in CA chaparral.'),
+                       helpText('USFS Wildland Fire Assessment System. (n.d.). National Fuel Moisture Database. United States Forest Service. Retrieved date from https://www.wfas.net/index.php/national-fuel-moisture-database-moisture-drought-103'),
+                       helpText(' '),
+                       'Fire Perimeters: ',
+                       helpText('Fire perimeter data for the state of CA from 1950 to 2017. Comprehensive record of fires across CA.'),
+                       helpText('CA Fire and Resource Assessment Program. (2017). CA Department of Forestry and Fire Protection. Retrieved date from https://frap.fire.ca.gov/frap-projects/fire-perimeters/'),
+                       'Ecoregion 261 A&B: ',
+                       helpText('Ecoregion 261 is defined as the CA Coastal CHaparral Forest and Shrub Province. This region experiences a Mediterreanean climate and is characterized by fire-adapted shrublands. Fire perimeter data fwas restricted to Ecoregion 261 A&B to assume LFM of Chamise *Adenstoma fasciculatum* as representative.'),
+                       helpText('McNab, W. H., Cleland, D. T., Freeouf, J. A., Keys Jr., J. E., Nowacki, G. J., & Carpenter, C. A. (2007). Description of “Ecological subregions: Sections of the conterminous United States” (first approximation). 242. https://www.treesearch.fs.fed.us/pubs/48672%0A')
                        ) # END of mainPanel
              ) # END of sidebarLayout
     ), # END of tabPanel for widget 1
     
-    tabPanel('WIDGET 2',
+    tabPanel('AV FIRE SIZE',
              sidebarLayout(
-               sidebarPanel('Select LFM Step Size',
+               sidebarPanel('Average Fire Size',
+                            helpText('This plot displays the average fire size within each step increment increase in LFM. It is expected that as LFM decreases fire size will increase.'),
                             # DROPDOWN SELECT
                             selectInput(inputId = 'lfm_step',
-                                        label = 'To calculate mean fire size by step increments of LFM',
+                                        label = 'Select LFM Step Size',
                                         choices = c('1 %'=1.,'5 %'=5.,'10 %'=10., '20 %'=20., '50 %'=50.))
                ), # END sidebar panel 
-               mainPanel('Average Fire Size calculated for given LFM Step Size',
-                         plotOutput(outputId='mean_fire_plot')
-                         
+               mainPanel(plotOutput(outputId='mean_fire_plot')
                ) # END of mainPanel
              )), # END of tabPanel for widget 2
     
-    tabPanel('WIDGET 3',
+    tabPanel('FIRE HISTOGRAM',
              sidebarLayout(
-               sidebarPanel('Choose a minimum fire size:',
+               sidebarPanel('Fire Histogram', 
+                            helpText('This plot displays the number of fires for each step increment increase in LFM. It is expected that as LFM decreases number of fires will increase.'), 
+                            helpText('Select a minimum fire size to see how the plot changes if fires are restricted to only larger fires.'),
                             # RADIO BUTTONS:
                             radioButtons(inputId='large_fire',
-                                         label='',
+                                         label='Choose a Minimum Fire Size:',
                                          choices=c('No minimum fire size'=0.,'1 km^2'=1.,'5 km^2'=5.,'10 km^2'=10.)),
-                            'Number of Bins:',
                             # SLIDER:
                             sliderInput(inputId='bins',
-                                        label='',
+                                        label='Choose Number of Bins:',
                                         min=1,
                                         max=100,
                                         value=30)
                ), # END sidebar panel 
-               mainPanel('Select a Minimum Fire Size and Number of Bins to Vary LFM Bin Width',
-                         plotOutput(outputId='lfm_hist')
+               mainPanel(plotOutput(outputId='lfm_hist')
                ) # END of mainPanel
              )), # END of tabPanel for widget 3
     
-    tabPanel('WIDGET 4',
+    tabPanel('CA MODEL DEMO',
              sidebarLayout(
-               sidebarPanel('[CAN TYPE SM HERE]',
+               sidebarPanel('Demonstration of CA Fire Spread Model',
+                            helpText('A cellular automata model was developed to explore how fire moves through vegetation under different conditions.'),
+                            'Cell States:',
+                            helpText('Red - active fire'),
+                            helpText('Black - burned'),
+                            helpText('Grey - unburnable'),
+                            helpText('Green Gradient - vegetation where shade represents fuel moisture, yellow=highest probability of spread'),
                             # RADIO BUTTONS:
                             radioButtons(inputId='n',
-                                         label='Choose gif:',
-                                         choices=c('Combined'='Combined','Prob Spread'='ProbSpread','Steps Burn'='StepsBurn','Simple'='Simple')),
+                                         label='Choose Initial Conditions:',
+                                         choices=c('Probability of Spread Varied'='ProbSpread','Duration of Combustion Varied'='StepsBurn','Combined Prob. Spread and Duration Varied'='Combined','Simple CA Demonstration'='Simple')),
                ), # END of sidebarPanel
-               mainPanel('Fire Spread Gif',
-                         plotOutput('flam_gif')
+               mainPanel(plotOutput('flam_gif')
                ) # END of mainPanel
              ) # END of sidebarLayout
     ) # END of tabPanel for widget 4
@@ -112,7 +122,9 @@ server <- function(input,output) {
       filter(YEAR_>=year(input$dateRange[1]) & YEAR_<=year(input$dateRange[2]))
   }) # END eco261ab_cent_rec_dateRed reactive
   output$fire_map <- renderPlot({
-    plot(eco261ab_cent_rec_dateRed()['LFM_Av20km'], col=brewer.pal(n=10,name='RdYlGn'))
+    plot(eco261ab_cent_rec_dateRed()['LFM_Av20km'], 
+         col=brewer.pal(n=10,name='RdYlGn'),
+         main='CA FRAP Fire Perimeters with LFM')
   }) # END fire_map output
   
   # WIDGET 2
@@ -129,6 +141,7 @@ server <- function(input,output) {
   
   output$mean_fire_plot <- renderPlot({
     plot(mean_area()~class_mids(),
+         main='Average Fire Size',
          xlab='LFM',
          ylab='Average Fire Size',
          pch=16,
