@@ -5,9 +5,9 @@ account: kfauss
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5833845
-bundleId: 5673037
+bundleId: 5673058
 url: https://kfauss.shinyapps.io/wildfire_app/
-when: 1647023346.32471
-lastSyncTime: 1647023346.32472
+when: 1647023577.68474
+lastSyncTime: 1647023577.68475
 asMultiple: FALSE
 asStatic: FALSE
